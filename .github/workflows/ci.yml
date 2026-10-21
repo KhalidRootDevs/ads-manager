@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      redis:
+        image: redis:7.4-alpine
+        ports: ["6379:6379"]
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-retries 10
+    env:
+      NODE_ENV: test
+      REDIS_URL: redis://localhost:6379
+      KEY_PEPPER: ci-key-pepper-0123456789abcdef0123456789
+      UID_PEPPER: ci-uid-pepper-0123456789abcdef0123456789
+      SESSION_SECRET: ci-session-secret-0123456789abcdef0123
+      TRACKING_SECRETS: k1:ci-tracking-secret-0123456789abcdef
+      TRACKING_ACTIVE_KID: k1
+      INTERNAL_TOKEN: ci-internal-token-0123456789abcdef
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Typecheck
+        run: pnpm -r --workspace-concurrency=4 exec tsc --noEmit -p tsconfig.json
+      - name: Unit and integration tests (MongoDB memory replica set + Redis)
+        run: pnpm -r --filter "./packages/*" --filter "./apps/*" --filter "!@orbit/web" test
+      - name: Build services and the web app
+        run: pnpm build
+
+  index-drift:
+    # Declared Mongoose indexes vs the staging cluster (§6.6). Never drops anything.
+    if: github.event_name == 'push'
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:drift
+        env:
+          MONGODB_URI: ${{ secrets.STAGING_MONGODB_URI }}
+          MONGODB_DB: orbit_ads_staging

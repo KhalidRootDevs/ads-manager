@@ -1,0 +1,46 @@
+# Local infrastructure for development. MongoDB comes from MONGODB_URI (the shared dev Atlas cluster);
+# start the optional local replica set with `docker compose --profile local-db up -d` if you work offline.
+name: orbit
+services:
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
+    ports: ["6379:6379"]
+    volumes: ["redis:/data"]
+    healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 5s, retries: 10 }
+
+  redpanda:
+    image: redpandadata/redpanda:v24.3.6
+    command:
+      - redpanda start --mode dev-container --smp 1 --memory 1G --overprovisioned
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr internal://redpanda:9092,external://localhost:19092
+    ports: ["19092:19092", "9644:9644"]
+    volumes: ["redpanda:/var/lib/redpanda/data"]
+    healthcheck: { test: ["CMD-SHELL", "rpk cluster health | grep -E 'Healthy:.+true'"], interval: 5s, retries: 20 }
+
+  redpanda-init:
+    image: redpandadata/redpanda:v24.3.6
+    depends_on: { redpanda: { condition: service_healthy } }
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - rpk topic create events.v1 -p 24 -r 1 --brokers redpanda:9092 -c retention.ms=604800000 || true;
+        rpk topic create events.dlq.v1 -p 3 -r 1 --brokers redpanda:9092 || true
+    restart: "no"
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    ports: ["1025:1025", "8025:8025"]
+
+  mongo:
+    profiles: ["local-db"]
+    image: mongo:8.0
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    ports: ["27017:27017"]
+    volumes: ["mongo:/data/db"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "try { rs.status().ok } catch (e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27017'}]}).ok }"]
+      interval: 5s
+      retries: 20
+
+volumes: { redis: {}, redpanda: {}, mongo: {} }

@@ -1,0 +1,9 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+onlyBuiltDependencies:
+  - "@confluentinc/kafka-javascript"
+  - esbuild
+  - mongodb-memory-server
+  - sharp
+  - unrs-resolver

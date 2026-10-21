@@ -1,0 +1,27 @@
+{
+  "name": "orbit",
+  "private": true,
+  "packageManager": "pnpm@10.34.7",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "db:migrate": "pnpm --filter @orbit/db migrate",
+    "db:drift": "pnpm --filter @orbit/db drift",
+    "db:seed": "pnpm --filter @orbit/db seed",
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "prettier": "^3.9.10",
+    "tsx": "^4.23.15",
+    "turbo": "^2.11.9",
+    "typescript": "~5.9.3",
+    "vitest": "^5.0.5"
+  }
+}

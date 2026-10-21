@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Orbit Tag Demo</title>
+  <!--
+    Orbit web tag demo, for use against the local stack (ad server :4100, collector :4200, workers).
+
+    1. Start the stack: `pnpm infra:up`, `pnpm db:seed`, then `pnpm --filter @orbit/workers dev`,
+       `pnpm --filter @orbit/ad-server dev`, `pnpm --filter @orbit/collector dev`.
+    2. Replace prp_REPLACE_ME with a WEB property id, and the plc_… values with that property's placements.
+       Find them in the admin UI (Properties → a web property → Placements) or in project/.data/demo-keys.json
+       (written by the seed). Web properties authenticate by Origin, not by key: in development the ad server
+       also accepts localhost / 127.0.0.1 origins, so no key is needed here.
+    3. Serve this folder over http (file:// has a null origin):
+         npx serve packages/sdk-web/demo        or        cd packages/sdk-web/demo && python3 -m http.server 8080
+       then open http://localhost:8080/?orbit_debug=1 to see tag logs in the console.
+    The tag is served by the ad server at /tag/orbit.js (build it first: `pnpm --filter @orbit/sdk-web build`).
+  -->
+  <style>
+    :root { --bg: #f8fafc; --fg: #0f172a; --muted: #475569; --card: #ffffff; --line: #e2e8f0; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #0b1220; --fg: #e2e8f0; --muted: #94a3b8; --card: #111a2e; --line: #1f2a44; } }
+    body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.5 system-ui, sans-serif; }
+    main { max-width: 980px; margin: 0 auto; padding: 24px 16px; }
+    h1 { font-size: 22px; margin: 0 0 4px; }
+    p { color: var(--muted); }
+    .slot { background: var(--card); border: 1px dashed var(--line); border-radius: 8px; padding: 12px; margin: 16px 0; min-height: 60px; }
+    .slot::before { content: attr(data-label); display: block; font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+    button { font: inherit; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--fg); cursor: pointer; }
+  </style>
+  <script async src="http://localhost:4100/tag/orbit.js"
+          data-orbit-app="prp_REPLACE_ME"
+          data-orbit-endpoint="http://localhost:4100"
+          data-orbit-test="true"></script>
+</head>
+<body>
+  <main>
+    <h1>Orbit web tag demo</h1>
+    <p>Test mode is on: ads show a “Test ad” badge and are excluded from reporting and budgets.</p>
+    <p>
+      <button type="button" onclick="window.orbit && window.orbit.refresh()">Refresh ads</button>
+      <button type="button" onclick="window.orbit && window.orbit.setConsent(true)">Give consent</button>
+      <button type="button" onclick="console.log(window.orbit && window.orbit.debug(true))">Debug</button>
+    </p>
+    <div class="slot" data-label="Display 300×250" data-orbit-placement="plc_REPLACE_DISPLAY"></div>
+    <div class="slot" data-label="Native" data-orbit-placement="plc_REPLACE_NATIVE"></div>
+    <div class="slot" data-label="Video" data-orbit-placement="plc_REPLACE_VIDEO"></div>
+    <div class="slot" data-label="Popup (once per visitor per day)" data-orbit-placement="plc_REPLACE_POPUP"></div>
+  </main>
+</body>
+</html>

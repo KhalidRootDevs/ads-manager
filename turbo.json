@@ -1,0 +1,12 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "globalEnv": ["NODE_ENV"],
+  "globalPassThroughEnv": ["MONGODB_URI", "MONGODB_DB", "REDIS_URL", "KAFKA_BROKERS"],
+  "tasks": {
+    "build": { "dependsOn": ["^build"], "outputs": ["dist/**", ".next/**", "!.next/cache/**"] },
+    "typecheck": { "dependsOn": ["^typecheck"] },
+    "lint": {},
+    "test": { "dependsOn": ["^build"], "cache": false },
+    "dev": { "cache": false, "persistent": true }
+  }
+}

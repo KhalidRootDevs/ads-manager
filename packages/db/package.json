@@ -1,0 +1,22 @@
+{
+  "name": "@orbit/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts", "./seed": "./src/seed/index.ts" },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "migrate": "tsx scripts/migrate.ts",
+    "drift": "tsx scripts/drift.ts",
+    "seed": "tsx scripts/seed.ts"
+  },
+  "dependencies": {
+    "@orbit/domain": "workspace:*",
+    "dotenv": "^17.2.0",
+    "mongoose": "^9.11.2"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "^11.3.0"
+  }
+}
